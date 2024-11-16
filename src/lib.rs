@@ -49,7 +49,16 @@ impl std::fmt::Display for Item {
 pub fn file_picker(label: &str) -> std::io::Result<PathBuf> {
     let mut base_dir = std::env::current_dir()?;
     loop {
-        let items = items(base_dir.clone());
+        let items = items(base_dir.clone())
+            .into_iter()
+            .filter_map(|x| {
+                if x.0.display().to_string() != *"." {
+                    Some(x)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
         if let Ok(item) = dialoguer::FuzzySelect::with_theme(&ColorfulTheme::default())
             .items(&items)
             .default(0)
@@ -73,8 +82,60 @@ pub fn file_picker(label: &str) -> std::io::Result<PathBuf> {
     }
 }
 
+/// Prompts the user to pick a directory interactively from the current directory.
+///
+/// # Arguments
+///
+/// * `label` - A string slice that holds the prompt label to display to the user.
+///
+/// # Returns
+///
+/// * `std::io::Result<PathBuf>` - Returns the `PathBuf` of the selected directory.
+///
+/// # Examples
+///
+/// ```rust
+/// use crate::file_picker::dir_picker;
+///
+/// let dir_path = dir_picker("Select a directory:").expect("Failed to pick a directory");
+/// println!("You selected the directory: {:?}", dir_path);
+/// ```
+///
+pub fn dir_picker(label: &str) -> std::io::Result<PathBuf> {
+    let mut base_dir = std::env::current_dir()?;
+    loop {
+        let items = items(base_dir.clone())
+            .into_iter()
+            .filter_map(|x| if x.0.is_dir() { Some(x) } else { None })
+            .collect::<Vec<_>>();
+        if let Ok(item) = dialoguer::FuzzySelect::with_theme(&ColorfulTheme::default())
+            .items(&items)
+            .default(0)
+            .with_prompt(label)
+            .highlight_matches(true)
+            .interact()
+        {
+            match items.get(item) {
+                None => {}
+                Some(item) => {
+                    if item.0.display().to_string() == *"." {
+                        return Ok(item.0.to_path_buf());
+                    } else if item.0.display().to_string() == *".." {
+                        base_dir.pop();
+                    } else {
+                        base_dir = base_dir.join(&item.0);
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn items(wd: PathBuf) -> Vec<Item> {
-    let mut items = vec![Item::new(PathBuf::from(".."))];
+    let mut items = vec![
+        Item::new(PathBuf::from(".")),
+        Item::new(PathBuf::from("..")),
+    ];
     let x = match std::fs::read_dir(&wd) {
         Ok(rd) => rd
             .filter_map(|x| x.ok())
@@ -92,9 +153,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
+    fn test_file_picker() {
         let file = file_picker("Pick a file to assert is_file and exists").unwrap();
         assert!(file.is_file());
         assert!(file.exists());
+    }
+
+    #[test]
+    fn test_dir_picker() {
+        let dir = dir_picker("Pick a file to assert is_dir and exists").unwrap();
+        assert!(dir.is_dir());
+        assert!(dir.exists());
     }
 }
