@@ -40,7 +40,7 @@ impl std::fmt::Display for Item {
 /// # Examples
 ///
 /// ```rust
-/// use crate::file_picker::file_picker;
+/// use file_picker::file_picker;
 ///
 /// let file_path = file_picker("Select a file:").expect("Failed to pick a file");
 /// println!("You selected the file: {:?}", file_path);
@@ -95,7 +95,7 @@ pub fn file_picker(label: &str) -> std::io::Result<PathBuf> {
 /// # Examples
 ///
 /// ```rust
-/// use crate::file_picker::dir_picker;
+/// use file_picker::dir_picker;
 ///
 /// let dir_path = dir_picker("Select a directory:").expect("Failed to pick a directory");
 /// println!("You selected the directory: {:?}", dir_path);
@@ -119,7 +119,7 @@ pub fn dir_picker(label: &str) -> std::io::Result<PathBuf> {
                 None => {}
                 Some(item) => {
                     if item.0.display().to_string() == *"." {
-                        return Ok(item.0.to_path_buf());
+                        return Ok(base_dir);
                     } else if item.0.display().to_string() == *".." {
                         base_dir.pop();
                     } else {
@@ -136,7 +136,8 @@ fn items(wd: PathBuf) -> Vec<Item> {
         Item::new(PathBuf::from(".")),
         Item::new(PathBuf::from("..")),
     ];
-    let x = match std::fs::read_dir(&wd) {
+
+    let mut x = match std::fs::read_dir(&wd) {
         Ok(rd) => rd
             .filter_map(|x| x.ok())
             .map(|entry| Item::new(entry.path()))
@@ -144,7 +145,7 @@ fn items(wd: PathBuf) -> Vec<Item> {
         Err(_) => vec![],
     };
 
-    items.extend(x);
+    items.append(&mut x);
     items
 }
 
@@ -162,6 +163,8 @@ mod tests {
     #[test]
     fn test_dir_picker() {
         let dir = dir_picker("Pick a file to assert is_dir and exists").unwrap();
+
+        assert_ne!(dir.display().to_string(), *".");
         assert!(dir.is_dir());
         assert!(dir.exists());
     }
