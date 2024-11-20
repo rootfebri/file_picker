@@ -11,9 +11,11 @@ Prompts the user to pick a file interactively from the current directory.
 # Examples
 
 ```rust
-fn main() {
-    use crate::file_picker::file_picker;
-    let file_path = file_picker("Select a file:").expect("Failed to pick a file");
-    println!("You selected the file: {:?}", file_path);
+fn main() -> std::io::Result<()> {
+    let file_path = file_picker::file_picker("Select a file:")?;
+    println!("You selected the file: {}", file_path.display());
+
+    let dir_path = file_picker::dir_picker("Select a directory:")?;
+    println!("You selected the directory: {}", dir_path.display());
 }
 ```

@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["rootfebri"]
 description = "Prompts the user to pick a file interactively from the current directory."
 license = "MIT OR Apache-2.0"
+homepage = "https://github.com/rootfebri/file_picker"
 
 [dependencies]
 dialoguer = { version = "0.11", features = ["fuzzy-select"] }
