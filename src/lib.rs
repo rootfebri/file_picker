@@ -1,6 +1,10 @@
+pub use spinners::TickStrings;
+
 use dialoguer::theme::ColorfulTheme;
 use std::fmt::Formatter;
 use std::path::PathBuf;
+
+mod spinners;
 
 static FILE: dialoguer::console::Emoji<'_, '_> = dialoguer::console::Emoji("📃", "📃");
 static FOLDER: dialoguer::console::Emoji<'_, '_> = dialoguer::console::Emoji("📂", "📂");
@@ -167,5 +171,14 @@ mod tests {
         assert_ne!(dir.display().to_string(), *".");
         assert!(dir.is_dir());
         assert!(dir.exists());
+    }
+
+    #[test]
+    fn tick_string() {
+        let start = std::time::Instant::now();
+        let tick = TickStrings::new();
+        println!("Time taken to construct {} ms", start.elapsed().as_millis());
+
+        assert_eq!(tick.arc.frames.first().unwrap(), "◜");
     }
 }
