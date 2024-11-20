@@ -1,6 +1,6 @@
 [package]
 name = "file_picker"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["rootfebri"]
 description = "Prompts the user to pick a file interactively from the current directory."
