@@ -116,6 +116,7 @@ pub fn dir_picker(label: &str) -> std::io::Result<PathBuf> {
             .items(&items)
             .default(0)
             .with_prompt(label)
+            .report(false)
             .highlight_matches(true)
             .interact()
         {
