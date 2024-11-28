@@ -46,12 +46,13 @@ impl std::fmt::Display for Item {
 /// ```rust
 /// use file_picker::file_picker;
 ///
-/// let file_path = file_picker("Select a file:").expect("Failed to pick a file");
+/// let file_path = file_picker("Select a file:", None).expect("Failed to pick a file");
 /// println!("You selected the file: {:?}", file_path);
 /// ```
 ///
-pub fn file_picker(label: &str) -> std::io::Result<PathBuf> {
-    let mut base_dir = std::env::current_dir()?;
+pub fn file_picker(label: &str, base: Option<PathBuf>) -> std::io::Result<PathBuf> {
+    let cwd = std::env::current_dir()?;
+    let mut base_dir = base.unwrap_or(cwd);
     loop {
         let items = items(base_dir.clone())
             .into_iter()
@@ -101,12 +102,14 @@ pub fn file_picker(label: &str) -> std::io::Result<PathBuf> {
 /// ```rust
 /// use file_picker::dir_picker;
 ///
-/// let dir_path = dir_picker("Select a directory:").expect("Failed to pick a directory");
+/// let dir_path = dir_picker("Select a directory:", None).expect("Failed to pick a directory");
 /// println!("You selected the directory: {:?}", dir_path);
 /// ```
 ///
-pub fn dir_picker(label: &str) -> std::io::Result<PathBuf> {
-    let mut base_dir = std::env::current_dir()?;
+pub fn dir_picker(label: &str, base: Option<PathBuf>) -> std::io::Result<PathBuf> {
+    let cwd = std::env::current_dir()?;
+    let mut base_dir = base.unwrap_or(cwd);
+
     loop {
         let items = items(base_dir.clone())
             .into_iter()
@@ -160,14 +163,14 @@ mod tests {
 
     #[test]
     fn test_file_picker() {
-        let file = file_picker("Pick a file to assert is_file and exists").unwrap();
+        let file = file_picker("Pick a file to assert is_file and exists", None).unwrap();
         assert!(file.is_file());
         assert!(file.exists());
     }
 
     #[test]
     fn test_dir_picker() {
-        let dir = dir_picker("Pick a file to assert is_dir and exists").unwrap();
+        let dir = dir_picker("Pick a file to assert is_dir and exists", None).unwrap();
 
         assert_ne!(dir.display().to_string(), *".");
         assert!(dir.is_dir());

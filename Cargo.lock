@@ -65,7 +65,7 @@ checksum = "486f806e73c5707928240ddc295403b1b93c96a02038563881c4a2fd84b81ac4"
 
 [[package]]
 name = "file_picker"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "dialoguer",
  "serde",
