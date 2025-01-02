@@ -98,7 +98,7 @@ impl Picker {
                     if self.pwd.is_some() && index == 0 {
                         self.cwd.pop();
                     } else {
-                        let path = &self.items.as_slice()[index];
+                        let path = &self.items.as_slice()[index - 1];
                         if path.is_file() {
                             return Ok(path.to_owned());
                         } else {
