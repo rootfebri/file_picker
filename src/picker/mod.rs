@@ -1,3 +1,4 @@
+use colored::Colorize;
 use dialoguer::theme::{ColorfulTheme, Theme};
 use std::env::current_dir;
 use std::path::{Path, PathBuf};
@@ -111,43 +112,38 @@ impl Picker {
         }
     }
 
+    fn simplify_path(&self) -> String {
+        let mut relative_path = String::new();
+        let mut temp_path = self.cwd.clone();
+        while let Some(parent) = temp_path.parent() {
+            relative_path.push_str(&(".".to_owned() + Self::DS));
+            temp_path = parent.to_path_buf();
+        }
+
+        relative_path
+    }
+
     fn pick(&mut self, display: &[String]) -> dialoguer::Result<usize> {
         let theme = ColorfulTheme::default();
         let mut dialog = dialoguer::FuzzySelect::with_theme(&theme);
 
         if let Some(ref prompt) = self.prompt {
-            // Use custom prompt and include the relative path from the root
             let current_prompt = if let Some(name) = self.cwd.file_name() {
-                let mut relative_path = String::new();
-                let mut temp_path = self.cwd.clone();
-                while let Some(parent) = temp_path.parent() {
-                    relative_path.push_str(&("..".to_owned() + Self::DS));
-                    temp_path = parent.to_path_buf();
-                }
-                format!(
-                    "{} [root{}{}{}]",
-                    prompt,
-                    &("..".to_owned() + Self::DS),
-                    relative_path,
-                    name.to_string_lossy()
-                )
+                let simplified = self.simplify_path();
+                let pcwd = format!("{}{}{}", Self::DS, simplified, name.to_string_lossy());
+                format!("{} {}", prompt, pcwd.dimmed())
             } else {
                 prompt.to_string()
             };
 
             dialog = dialog.with_prompt(current_prompt);
         } else {
-            // Use only the relative path from the root as the prompt
             let current_prompt = if let Some(name) = self.cwd.file_name() {
-                let mut relative_path = String::new();
-                let mut temp_path = self.cwd.clone();
-                while let Some(parent) = temp_path.parent() {
-                    relative_path.push_str("..\\");
-                    temp_path = parent.to_path_buf();
-                }
-                format!("[root\\{}{}]", relative_path, name.to_string_lossy())
+                let simplified = self.simplify_path();
+                let pcwd = format!("{}{}{}", Self::DS, simplified, name.to_string_lossy());
+                pcwd.dimmed().to_string()
             } else {
-                "[root]".to_string()
+                Self::DS.dimmed().to_string()
             };
 
             dialog = dialog.with_prompt(current_prompt);
