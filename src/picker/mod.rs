@@ -1,4 +1,5 @@
 use dialoguer::theme::{ColorfulTheme, Theme};
+use std::env::current_dir;
 use std::path::{Path, PathBuf};
 
 mod pick_types;
@@ -32,7 +33,7 @@ impl Picker {
 
     pub fn new(pick_type: PickType, prompt: Option<impl Into<String>>) -> Self {
         let prompt = prompt.map(|prompt| prompt.into());
-        let cwd = PathBuf::from(".");
+        let cwd = current_dir().expect("Failed to initialize current dir, use `with_cwd` instead");
 
         let mut this = Self {
             ci: 0,
@@ -206,6 +207,7 @@ impl ToStrong<Option<PathBuf>> for Option<&'_ Path> {
 pub trait PickerBuilder {
     fn with_theme(self, theme: impl Theme + 'static) -> Self;
     fn with_prompt(self, prompt: impl Into<String>) -> Self;
+    fn with_cwd(self, cwd: impl Into<PathBuf>) -> Self;
 }
 
 impl PickerBuilder for Picker {
@@ -216,6 +218,11 @@ impl PickerBuilder for Picker {
 
     fn with_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.prompt = Some(prompt.into());
+        self
+    }
+
+    fn with_cwd(mut self, cwd: impl Into<PathBuf>) -> Self {
+        self.cwd = cwd.into();
         self
     }
 }
