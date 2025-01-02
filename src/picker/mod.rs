@@ -1,14 +1,13 @@
 use colored::Colorize;
 use dialoguer::theme::{ColorfulTheme, Theme};
 use std::env::current_dir;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 mod pick_types;
 pub use pick_types::PickType;
 
 pub struct Picker {
     ci: usize,
-    pwd: Option<PathBuf>,
     cwd: PathBuf,
     directories: Vec<PathBuf>,
     files: Vec<PathBuf>,
@@ -21,6 +20,7 @@ pub struct Picker {
 impl Picker {
     #[cfg(windows)]
     const DS: &'static str = "\\";
+
     #[cfg(not(windows))]
     const DS: &'static str = "/";
 
@@ -38,7 +38,6 @@ impl Picker {
 
         let mut this = Self {
             ci: 0,
-            pwd: cwd.parent().extract_option(),
             cwd: cwd.clone(),
             directories: vec![],
             files: vec![],
@@ -53,6 +52,15 @@ impl Picker {
     }
 
     fn process_files(&mut self) {
+        self.items.clear();
+        if self.pick_type == PickType::Directory {
+            self.items.push(".".into());
+        }
+
+        if self.cwd.parent().is_some() {
+            self.items.push("..".into());
+        }
+
         if let Ok(entry) = self.cwd.read_dir() {
             for dir in entry.map_while(|d| d.ok()) {
                 if dir.path().is_file() {
@@ -67,7 +75,6 @@ impl Picker {
     }
 
     fn load_items(&mut self) {
-        self.items.clear();
         match self.pick_type {
             PickType::Directory => {
                 self.items.append(&mut self.directories);
@@ -83,22 +90,23 @@ impl Picker {
         loop {
             let display = self.make_display(&self.items);
             let index = self.pick(&display)?;
+            self.ci = index;
 
             match self.pick_type {
                 PickType::Directory => {
                     if index == 0 {
                         return Ok(self.cwd.clone());
-                    } else if self.pwd.is_some() && index == 1 {
+                    } else if self.cwd.parent().is_some() && index == 1 {
                         self.cwd.pop();
                     } else {
                         self.cwd = self.cwd.join(&self.items.as_slice()[index]);
                     }
                 }
                 PickType::File => {
-                    if self.pwd.is_some() && index == 0 {
+                    if self.cwd.parent().is_some() && index == 0 {
                         self.cwd.pop();
                     } else {
-                        let path = &self.items.as_slice()[index - 1];
+                        let path = &self.items.as_slice()[index];
                         if path.is_file() {
                             return Ok(path.to_owned());
                         } else {
@@ -161,15 +169,19 @@ impl Picker {
 
     fn make_display(&self, items: &[PathBuf]) -> Vec<String> {
         let mut displays: Vec<String> = vec![];
-
-        match (self.pick_type == PickType::Directory, self.pwd.is_some()) {
-            (true, true) => {
+        if let Some(path) = items.first() {
+            if *path == PathBuf::from(".") {
                 displays.push(".".into());
-                displays.push("..".into())
+            } else if *path == PathBuf::from("..") {
+                displays.push("..".into());
             }
-            (false, true) => displays.push("..".into()),
-            (true, false) => displays.push(".".into()),
-            (false, false) => {}
+        }
+        if let Some(path) = items.get(1) {
+            if *path == PathBuf::from(".") {
+                displays.push(".".into());
+            } else if *path == PathBuf::from("..") {
+                displays.push("..".into());
+            }
         }
 
         items.iter().for_each(|path| {
@@ -188,16 +200,6 @@ impl Picker {
 
     const FOLDER_ICON: &'static str = "📁"; // Icon for folders
     const FILE_ICON: &'static str = "📄"; // Icon for files
-}
-
-trait ToStrong<T: Send + Sync> {
-    fn extract_option(&self) -> T;
-}
-
-impl ToStrong<Option<PathBuf>> for Option<&'_ Path> {
-    fn extract_option(&self) -> Option<PathBuf> {
-        self.map(|path| path.to_path_buf())
-    }
 }
 
 pub trait PickerBuilder {
@@ -276,16 +278,5 @@ mod tests {
             picker.items,
             vec![PathBuf::from("dir1"), PathBuf::from("dir2"),]
         );
-    }
-
-    #[test]
-    fn test_extract_option() {
-        let path = Some(Path::new("/test/path"));
-        let extracted: Option<PathBuf> = path.extract_option();
-        assert_eq!(extracted, Some(PathBuf::from("/test/path")));
-
-        let none_path: Option<&Path> = None;
-        let extracted_none: Option<PathBuf> = none_path.extract_option();
-        assert_eq!(extracted_none, None);
     }
 }

@@ -52,6 +52,9 @@ impl std::fmt::Display for Item {
 /// println!("You selected the file: {:?}", file_path);
 /// ```
 ///
+/// # Deprecated
+/// This function is deprecated. Use [`file_picker::Picker`] instead.
+#[deprecated = "use `file_picker::Picker` instead"]
 pub fn file_picker(label: &str, base: Option<PathBuf>) -> std::io::Result<PathBuf> {
     let cwd = std::env::current_dir()?;
     let mut base_dir = base.unwrap_or(cwd);
@@ -107,7 +110,9 @@ pub fn file_picker(label: &str, base: Option<PathBuf>) -> std::io::Result<PathBu
 /// let dir_path = dir_picker("Select a directory:", None).expect("Failed to pick a directory");
 /// println!("You selected the directory: {:?}", dir_path);
 /// ```
-///
+/// # Deprecated
+/// This function is deprecated. Use [`file_picker::Picker`] instead.
+#[deprecated = "use `file_picker::Picker` instead"]
 pub fn dir_picker(label: &str, base: Option<PathBuf>) -> std::io::Result<PathBuf> {
     let cwd = std::env::current_dir()?;
     let mut base_dir = base.unwrap_or(cwd);
