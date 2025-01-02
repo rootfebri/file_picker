@@ -32,9 +32,7 @@ impl Picker {
 
     pub fn new(pick_type: PickType, prompt: Option<impl Into<String>>) -> Self {
         let prompt = prompt.map(|prompt| prompt.into());
-        let cwd = PathBuf::from(".")
-            .canonicalize()
-            .expect("Cannot canonicalize current dir");
+        let cwd = PathBuf::from(".");
 
         let mut this = Self {
             ci: 0,
