@@ -4,6 +4,8 @@ use dialoguer::theme::ColorfulTheme;
 use std::fmt::Formatter;
 use std::path::PathBuf;
 
+mod picker;
+pub use picker::*;
 mod spinners;
 
 static FILE: dialoguer::console::Emoji<'_, '_> = dialoguer::console::Emoji("📃", "📃");
