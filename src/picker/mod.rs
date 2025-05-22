@@ -18,9 +18,10 @@ pub struct Picker {
 }
 
 impl Picker {
+    const FOLDER_ICON: &'static str = "📁"; // Icon for folders
+    const FILE_ICON: &'static str = "📄"; // Icon for files
     #[cfg(windows)]
     const DS: &'static str = "\\";
-
     #[cfg(not(windows))]
     const DS: &'static str = "/";
 
@@ -51,6 +52,40 @@ impl Picker {
         this
     }
 
+    pub fn select(&mut self) -> dialoguer::Result<PathBuf> {
+        loop {
+            let display = self.make_display(&self.items);
+            let index = self.pick(&display)?;
+            self.ci = index;
+
+            match self.pick_type {
+                PickType::Directory => {
+                    if index == 0 {
+                        break Ok(self.cwd.clone());
+                    } else if self.cwd.parent().is_some() && index == 1 {
+                        self.cwd.pop();
+                    } else {
+                        self.cwd = self.cwd.join(&self.items.as_slice()[index]);
+                    }
+                }
+                PickType::File => {
+                    if self.cwd.parent().is_some() && index == 0 {
+                        self.cwd.pop();
+                    } else {
+                        let path = &self.items.as_slice()[index];
+                        if path.is_file() {
+                            break Ok(path.to_owned());
+                        } else {
+                            self.cwd = self.cwd.join(path);
+                        }
+                    }
+                }
+            }
+
+            self.process_files();
+        }
+    }
+
     fn process_files(&mut self) {
         self.items.clear();
         if self.pick_type == PickType::Directory {
@@ -62,7 +97,7 @@ impl Picker {
         }
 
         if let Ok(entry) = self.cwd.read_dir() {
-            for dir in entry.map_while(|d| d.ok()) {
+            for dir in entry.filter_map(Result::ok) {
                 if dir.path().is_file() {
                     self.files.push(dir.path());
                 } else {
@@ -83,40 +118,6 @@ impl Picker {
                 self.items.append(&mut self.files);
                 self.items.append(&mut self.directories);
             }
-        }
-    }
-
-    pub fn select(&mut self) -> dialoguer::Result<PathBuf> {
-        loop {
-            let display = self.make_display(&self.items);
-            let index = self.pick(&display)?;
-            self.ci = index;
-
-            match self.pick_type {
-                PickType::Directory => {
-                    if index == 0 {
-                        return Ok(self.cwd.clone());
-                    } else if self.cwd.parent().is_some() && index == 1 {
-                        self.cwd.pop();
-                    } else {
-                        self.cwd = self.cwd.join(&self.items.as_slice()[index]);
-                    }
-                }
-                PickType::File => {
-                    if self.cwd.parent().is_some() && index == 0 {
-                        self.cwd.pop();
-                    } else {
-                        let path = &self.items.as_slice()[index];
-                        if path.is_file() {
-                            return Ok(path.to_owned());
-                        } else {
-                            self.cwd = self.cwd.join(path);
-                        }
-                    }
-                }
-            }
-
-            self.process_files();
         }
     }
 
@@ -197,9 +198,6 @@ impl Picker {
 
         displays
     }
-
-    const FOLDER_ICON: &'static str = "📁"; // Icon for folders
-    const FILE_ICON: &'static str = "📄"; // Icon for files
 }
 
 pub trait PickerBuilder {
