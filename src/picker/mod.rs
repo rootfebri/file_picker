@@ -25,14 +25,39 @@ impl Picker {
     #[cfg(not(windows))]
     const DS: &'static str = "/";
 
+    /// Creates a new [`Picker`] instance configured for file selection.
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`Picker`] set to pick files, with a default prompt "Pick a File".
     pub fn file() -> Self {
         Self::new(PickType::File, Some("Pick a File"))
     }
 
+    /// Creates a new [`Picker`] instance configured for directory selection.
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`Picker`] set to pick directories, with a default prompt "Pick a Folder".
     pub fn directory() -> Self {
         Self::new(PickType::Directory, Some("Pick a Folder"))
     }
 
+    /// Creates a new [`Picker`] instance with the specified `PickType` and optional prompt.
+    ///
+    /// # Arguments
+    ///
+    /// * `pick_type` - Determines whether the picker is for files or directories.
+    /// * `prompt` - An optional prompt message to display to the user.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the current working directory cannot be determined.
+    ///
+    /// # Returns
+    ///
+    /// Returns a new [`Picker`] initialized with the current directory, empty file and directory lists,
+    /// the specified pick type, prompt, and a default theme. The file and directory items are loaded immediately.
     pub fn new(pick_type: PickType, prompt: Option<impl Into<String>>) -> Self {
         let prompt = prompt.map(|prompt| prompt.into());
         let cwd = current_dir().expect("Failed to initialize current dir, use `with_cwd` instead");
@@ -52,6 +77,16 @@ impl Picker {
         this
     }
 
+    /// Presents an interactive picker to the user for selecting a file or directory.
+    ///
+    /// This method displays the current list of items (files or directories) and allows
+    /// the user to navigate through the filesystem. The behavior depends on the `PickType`:
+    /// - For [`PickType::Directory`], selecting the first item returns the current directory,
+    ///   the second item navigates up one level, and other selections navigate into subdirectories.
+    /// - For [`PickType::File`], the first item (if available) navigates up one level, and
+    ///   selecting a file returns its path. Selecting a directory navigates into it.
+    ///
+    /// Returns the selected `PathBuf` on success, or a dialoguer error if the selection fails.
     pub fn select(&mut self) -> dialoguer::Result<PathBuf> {
         loop {
             let display = self.make_display(&self.items);
